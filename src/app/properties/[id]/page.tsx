@@ -69,7 +69,7 @@ export default function PropertyDetailPage() {
     <div className="bg-white min-h-screen pb-20">
       {/* Navigation */}
       <div className="container mx-auto px-4 py-4">
-        <Button variant="ghost" className="mb-4 hover:text-accent" render={<Link href="/properties" />}>
+        <Button variant="ghost" className="mb-4 hover:text-accent" nativeButton={false} render={<Link href="/properties" />}>
           <ArrowLeft className="mr-2" size={18} /> Back to Search
         </Button>
       </div>

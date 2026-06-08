@@ -84,7 +84,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </Avatar>
           <span className="text-xs font-medium text-muted-foreground">{property.agent?.name || "Agent"}</span>
         </div>
-        <Button variant="link" size="sm" className="text-accent h-auto p-0" render={<Link href={`/properties/${property.id}`} />}>
+        <Button variant="link" size="sm" className="text-accent h-auto p-0" nativeButton={false} render={<Link href={`/properties/${property.id}`} />}>
           View Details
         </Button>
       </CardFooter>
