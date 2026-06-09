@@ -23,14 +23,71 @@ interface PropertyCardProps {
       avatar: string;
     };
   };
+  layout?: "vertical" | "horizontal";
 }
 
-export default function PropertyCard({ property }: PropertyCardProps) {
+export default function PropertyCard({ property, layout = "vertical" }: PropertyCardProps) {
   const formattedPrice = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(property.price);
+
+  if (layout === "horizontal") {
+    return (
+      <Card className="overflow-hidden group border-none shadow-lg hover:shadow-xl transition-all duration-300">
+        <div className="flex flex-col sm:flex-row">
+          <div className="relative sm:w-72 shrink-0 aspect-[16/10] sm:aspect-auto sm:h-auto overflow-hidden">
+            <Image
+              src={property.images[0]?.url || "/placeholder-property.jpg"}
+              alt={property.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            <div className="absolute top-3 left-3 flex gap-2">
+              <Badge className={`${property.type === "BUY" ? "bg-primary" : "bg-accent"} text-white border-none`}>
+                {property.type === "BUY" ? "FOR SALE" : property.type === "RENT" ? "FOR RENT" : "COMMERCIAL"}
+              </Badge>
+            </div>
+            <button className="absolute top-3 right-3 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-accent hover:text-white transition-all duration-300">
+              <Heart size={18} />
+            </button>
+          </div>
+          <div className="flex-1 p-5 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center text-muted-foreground text-sm gap-1">
+                <MapPin size={14} className="text-accent" />
+                <span>{property.locality}, {property.city}</span>
+              </div>
+              <h3 className="font-bold text-lg line-clamp-1 group-hover:text-accent transition-colors">
+                <Link href={`/properties/${property.id}`}>{property.title}</Link>
+              </h3>
+              <p className="text-xl font-bold text-primary">{formattedPrice}</p>
+            </div>
+            <div className="flex items-center justify-between pt-3 border-t border-muted/50 mt-3">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <Bed size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium">{property.beds}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Bath size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium">{property.baths}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Move size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-medium">{property.area} <span className="text-[10px]">SQFT</span></span>
+                </div>
+              </div>
+              <Button variant="link" size="sm" className="text-accent h-auto p-0" nativeButton={false} render={<Link href={`/properties/${property.id}`} />}>
+                View Details
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden group border-none shadow-lg hover:shadow-xl transition-all duration-300">

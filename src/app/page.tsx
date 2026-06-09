@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, MapPin, Home as HomeIcon, DollarSign, ArrowRight, Building2, Sparkles } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -11,6 +13,19 @@ import { Badge } from "@/components/ui/badge";
 import PropertyCard from "@/components/property/PropertyCard";
 
 export default function Home() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = () => {
+    router.push(`/properties${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ""}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
     <div className="bg-surface min-h-screen">
       {/* Hero Section */}
@@ -52,18 +67,30 @@ export default function Home() {
                 <Input 
                   placeholder="Search by city, neighborhood, or ZIP..." 
                   className="bg-white/5 border-none h-16 pl-14 pr-6 text-white placeholder:text-white/30 rounded-full focus-visible:ring-2 focus-visible:ring-accent/50 transition-all"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
                 />
               </div>
               <div className="flex gap-4">
-                <div className="bg-white/5 px-6 flex items-center gap-3 rounded-full border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
+                <Link
+                  href="/properties?type=BUY"
+                  className="bg-white/5 px-6 flex items-center gap-3 rounded-full border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                >
                   <HomeIcon className="text-accent" size={20} />
-                  <span className="text-white font-medium">Type</span>
-                </div>
-                <div className="bg-white/5 px-6 flex items-center gap-3 rounded-full border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
+                  <span className="text-white font-medium">Buy</span>
+                </Link>
+                <Link
+                  href="/properties?type=RENT"
+                  className="bg-white/5 px-6 flex items-center gap-3 rounded-full border border-white/10 cursor-pointer hover:bg-white/10 transition-colors"
+                >
                   <DollarSign className="text-accent" size={20} />
-                  <span className="text-white font-medium">Price</span>
-                </div>
-                <Button className="bg-accent hover:bg-accent/90 text-white h-16 px-10 rounded-full font-bold text-lg shadow-xl shadow-accent/20 transition-all hover:scale-105 active:scale-95">
+                  <span className="text-white font-medium">Rent</span>
+                </Link>
+                <Button 
+                  className="bg-accent hover:bg-accent/90 text-white h-16 px-10 rounded-full font-bold text-lg shadow-xl shadow-accent/20 transition-all hover:scale-105 active:scale-95"
+                  onClick={handleSearch}
+                >
                   Search
                 </Button>
               </div>
@@ -161,29 +188,30 @@ export default function Home() {
               { name: "New York", state: "NY", count: "215", img: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&q=80&w=600" },
               { name: "Los Angeles", state: "California", count: "167", img: "https://images.unsplash.com/photo-1501139083538-0139583c060f?auto=format&fit=crop&q=80&w=600" },
             ].map((city) => (
-              <motion.div
-                key={city.name}
-                whileHover={{ y: -10 }}
-                className="relative h-96 rounded-3xl overflow-hidden group cursor-pointer"
-              >
-                <Image src={city.img} alt={city.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-                <div className="absolute bottom-0 left-0 p-8 w-full">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-white font-bold text-2xl mb-1">{city.name}</p>
-                      <p className="text-white/60 text-sm">{city.state}</p>
+              <Link key={city.name} href={`/properties?q=${encodeURIComponent(city.name)}`}>
+                <motion.div
+                  whileHover={{ y: -10 }}
+                  className="relative h-96 rounded-3xl overflow-hidden group cursor-pointer"
+                >
+                  <Image src={city.img} alt={city.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                  <div className="absolute bottom-0 left-0 p-8 w-full">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-white font-bold text-2xl mb-1">{city.name}</p>
+                        <p className="text-white/60 text-sm">{city.state}</p>
+                      </div>
+                      <Badge className="bg-accent text-white border-none h-10 w-10 flex items-center justify-center rounded-xl p-0">
+                        <ArrowRight size={20} />
+                      </Badge>
                     </div>
-                    <Badge className="bg-accent text-white border-none h-10 w-10 flex items-center justify-center rounded-xl p-0">
-                      <ArrowRight size={20} />
-                    </Badge>
+                    <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2">
+                      <Building2 className="text-accent" size={16} />
+                      <span className="text-white/80 text-xs font-bold uppercase tracking-tighter">{city.count} Listings Available</span>
+                    </div>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2">
-                    <Building2 className="text-accent" size={16} />
-                    <span className="text-white/80 text-xs font-bold uppercase tracking-tighter">{city.count} Listings Available</span>
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             ))}
           </div>
         </div>
@@ -223,10 +251,19 @@ export default function Home() {
                 Join thousands of happy homeowners who found their perfect place with EstatePremium.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button className="bg-primary hover:bg-primary/90 text-white h-16 px-10 rounded-2xl font-bold text-lg transition-all hover:scale-105 active:scale-95">
+                <Button
+                  className="bg-primary hover:bg-primary/90 text-white h-16 px-10 rounded-2xl font-bold text-lg transition-all hover:scale-105 active:scale-95"
+                  nativeButton={false}
+                  render={<Link href="/properties" />}
+                >
                   Get Started Now
                 </Button>
-                <Button variant="outline" className="border-primary text-primary h-16 px-10 rounded-2xl font-bold text-lg hover:bg-primary/5 transition-all">
+                <Button
+                  variant="outline"
+                  className="border-primary text-primary h-16 px-10 rounded-2xl font-bold text-lg hover:bg-primary/5 transition-all"
+                  nativeButton={false}
+                  render={<Link href="/agent" />}
+                >
                   Contact an Agent
                 </Button>
               </div>

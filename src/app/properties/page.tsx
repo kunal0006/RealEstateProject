@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Grid, List, Map as MapIcon, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PropertyCard from "@/components/property/PropertyCard";
-import SearchFilters from "@/components/search/SearchFilters";
+import SearchFilters, { FilterState, DEFAULT_FILTERS } from "@/components/search/SearchFilters";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import PropertyMap from "@/components/property/PropertyMap";
 
 const mockProperties = [
   {
@@ -95,8 +96,109 @@ const mockProperties = [
   },
 ];
 
+const ITEMS_PER_PAGE = 4;
+
 export default function PropertiesPage() {
   const [view, setView] = useState<"grid" | "list" | "map">("grid");
+  const [filters, setFilters] = useState<FilterState>({ ...DEFAULT_FILTERS });
+  const [sortBy, setSortBy] = useState("newest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  // Filter properties
+  const filteredProperties = useMemo(() => {
+    let results = [...mockProperties];
+
+    // Filter by type
+    if (filters.type && filters.type !== "all") {
+      results = results.filter((p) => p.type === filters.type);
+    }
+
+    // Filter by price range
+    results = results.filter(
+      (p) => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
+    );
+
+    // Filter by beds
+    if (filters.beds && filters.beds !== "Any") {
+      const bedCount = filters.beds === "4+" ? 4 : parseInt(filters.beds, 10);
+      if (filters.beds === "4+") {
+        results = results.filter((p) => p.beds >= bedCount);
+      } else {
+        results = results.filter((p) => p.beds === bedCount);
+      }
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "price-asc":
+        results.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        results.sort((a, b) => b.price - a.price);
+        break;
+      case "area":
+        results.sort((a, b) => b.area - a.area);
+        break;
+      case "newest":
+      default:
+        // Keep original order (newest)
+        break;
+    }
+
+    return results;
+  }, [filters, sortBy]);
+
+  // Paginate
+  const totalPages = Math.max(1, Math.ceil(filteredProperties.length / ITEMS_PER_PAGE));
+  const paginatedProperties = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProperties.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredProperties, currentPage]);
+
+  const handleApplyFilters = useCallback((newFilters: FilterState) => {
+    setFilters(newFilters);
+    setCurrentPage(1);
+    setMobileFiltersOpen(false);
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setFilters({ ...DEFAULT_FILTERS });
+    setCurrentPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((value: string | null) => {
+    if (value) {
+      setSortBy(value);
+      setCurrentPage(1);
+    }
+  }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // Pagination range helper
+  const getPageNumbers = (): (number | "...")[] => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      for (
+        let i = Math.max(2, currentPage - 1);
+        i <= Math.min(totalPages - 1, currentPage + 1);
+        i++
+      ) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   return (
     <div className="bg-surface min-h-screen">
@@ -104,7 +206,11 @@ export default function PropertiesPage() {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar - Desktop */}
           <aside className="hidden lg:block w-80 shrink-0">
-            <SearchFilters />
+            <SearchFilters
+              filters={filters}
+              onApply={handleApplyFilters}
+              onReset={handleResetFilters}
+            />
           </aside>
 
           {/* Main Content */}
@@ -113,7 +219,9 @@ export default function PropertiesPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-white p-4 rounded-2xl border border-muted/50">
               <div>
                 <h1 className="text-2xl font-bold text-primary">Properties</h1>
-                <p className="text-sm text-muted-foreground">Found {mockProperties.length} results</p>
+                <p className="text-sm text-muted-foreground">
+                  Found {filteredProperties.length} result{filteredProperties.length !== 1 ? "s" : ""}
+                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -144,7 +252,7 @@ export default function PropertiesPage() {
                   </Button>
                 </div>
 
-                <Select defaultValue="newest">
+                <Select value={sortBy} onValueChange={handleSortChange}>
                   <SelectTrigger className="w-[160px] h-10 border-muted">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -156,36 +264,102 @@ export default function PropertiesPage() {
                   </SelectContent>
                 </Select>
 
-                <Sheet>
+                <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
                   <SheetTrigger className="lg:hidden h-10 px-4 border border-muted rounded-md flex items-center hover:bg-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent text-sm font-medium">
                     <SlidersHorizontal className="mr-2" size={16} /> Filters
                   </SheetTrigger>
                   <SheetContent side="left" className="p-0 overflow-y-auto">
-                    <SearchFilters />
+                    <SearchFilters
+                      filters={filters}
+                      onApply={handleApplyFilters}
+                      onReset={handleResetFilters}
+                    />
                   </SheetContent>
                 </Sheet>
               </div>
             </div>
 
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
-              {mockProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
+            {/* Results */}
+            {view === "map" ? (
+              <div className="rounded-2xl overflow-hidden border border-muted/50 bg-white h-[600px]">
+                <PropertyMap properties={filteredProperties} />
+              </div>
+            ) : filteredProperties.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-muted/50 p-16 text-center">
+                <div className="max-w-sm mx-auto">
+                  <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
+                    <Grid size={24} className="text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-bold text-primary mb-2">No properties found</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Try adjusting your filters to find more properties.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="border-accent text-accent hover:bg-accent/5"
+                    onClick={handleResetFilters}
+                  >
+                    Reset Filters
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className={
+                  view === "grid"
+                    ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8"
+                    : "flex flex-col gap-6"
+                }
+              >
+                {paginatedProperties.map((property) => (
+                  <PropertyCard key={property.id} property={property} layout={view === "list" ? "horizontal" : "vertical"} />
+                ))}
+              </div>
+            )}
 
             {/* Pagination */}
-            <div className="mt-12 flex justify-center">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" disabled className="h-10 px-4">Previous</Button>
-                <Button variant="outline" className="h-10 w-10 p-0 bg-accent text-white border-accent">1</Button>
-                <Button variant="outline" className="h-10 w-10 p-0 hover:border-accent hover:text-accent">2</Button>
-                <Button variant="outline" className="h-10 w-10 p-0 hover:border-accent hover:text-accent">3</Button>
-                <span className="px-2">...</span>
-                <Button variant="outline" className="h-10 w-10 p-0 hover:border-accent hover:text-accent">12</Button>
-                <Button variant="outline" className="h-10 px-4 hover:border-accent hover:text-accent">Next</Button>
+            {filteredProperties.length > 0 && totalPages > 1 && (
+              <div className="mt-12 flex justify-center">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === 1}
+                    className="h-10 px-4 hover:border-accent hover:text-accent disabled:opacity-40"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                  >
+                    Previous
+                  </Button>
+                  {getPageNumbers().map((page, idx) =>
+                    page === "..." ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
+                        ...
+                      </span>
+                    ) : (
+                      <Button
+                        key={page}
+                        variant="outline"
+                        className={`h-10 w-10 p-0 ${
+                          currentPage === page
+                            ? "bg-accent text-white border-accent"
+                            : "hover:border-accent hover:text-accent"
+                        }`}
+                        onClick={() => handlePageChange(page as number)}
+                      >
+                        {page}
+                      </Button>
+                    )
+                  )}
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === totalPages}
+                    className="h-10 px-4 hover:border-accent hover:text-accent disabled:opacity-40"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </main>
         </div>
       </div>
