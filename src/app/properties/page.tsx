@@ -13,7 +13,16 @@ import {
 import PropertyCard from "@/components/property/PropertyCard";
 import SearchFilters, { FilterState, DEFAULT_FILTERS } from "@/components/search/SearchFilters";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import PropertyMap from "@/components/property/PropertyMap";
+import dynamic from "next/dynamic";
+
+const PropertyMap = dynamic(() => import("@/components/property/PropertyMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[600px] rounded-2xl bg-muted/10 animate-pulse flex items-center justify-center border border-muted/50">
+      <span className="text-muted-foreground text-sm font-medium">Loading Map...</span>
+    </div>
+  ),
+});
 
 const mockProperties = [
   {
