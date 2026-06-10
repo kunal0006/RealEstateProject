@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Globe, Mail, Lock, User, ArrowRight, Loader2, Building2 } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { signIn } from "next-auth/react";
+import { GoogleIcon, GithubIcon, FacebookIcon } from "@/components/ui/icons";
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -110,12 +112,33 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="h-12 border-muted hover:bg-surface rounded-xl">
-                <Globe className="mr-2 h-4 w-4" /> Google
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                variant="outline"
+                type="button"
+                className="h-12 border-muted hover:bg-surface rounded-xl flex items-center justify-center gap-2 px-1 text-xs font-semibold"
+                onClick={() => signIn("google")}
+              >
+                <GoogleIcon className="h-4 w-4 flex-shrink-0" />
+                <span>Google</span>
               </Button>
-              <Button variant="outline" className="h-12 border-muted hover:bg-surface rounded-xl">
-                <Globe className="mr-2 h-4 w-4" /> GitHub
+              <Button
+                variant="outline"
+                type="button"
+                className="h-12 border-muted hover:bg-surface rounded-xl flex items-center justify-center gap-2 px-1 text-xs font-semibold"
+                onClick={() => signIn("facebook")}
+              >
+                <FacebookIcon className="h-4 w-4 text-[#1877F2] flex-shrink-0" />
+                <span>Facebook</span>
+              </Button>
+              <Button
+                variant="outline"
+                type="button"
+                className="h-12 border-muted hover:bg-surface rounded-xl flex items-center justify-center gap-2 px-1 text-xs font-semibold"
+                onClick={() => signIn("github")}
+              >
+                <GithubIcon className="h-4 w-4 text-foreground flex-shrink-0" />
+                <span>GitHub</span>
               </Button>
             </div>
           </CardContent>
